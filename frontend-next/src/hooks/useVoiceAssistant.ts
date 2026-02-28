@@ -67,7 +67,7 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}) {
           const response = await fetch('https://api.ipify.org?format=json', { method: 'GET' });
           if (response.ok) {
             const { ip } = await response.json();
-            const tzResponse = await fetch(`http://ip-api.com/json/${ip}?fields=timezone,status`);
+            const tzResponse = await fetch(`https://ip-api.com/json/${ip}?fields=timezone,status`);
             if (tzResponse.ok) {
               const tzData = await tzResponse.json();
               if (tzData.status === 'success' && tzData.timezone) {
