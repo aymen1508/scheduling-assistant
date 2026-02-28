@@ -59,23 +59,14 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}) {
   useEffect(() => {
     const connectWebSocket = async () => {
       try {
-        // Detect user's timezone
+        // Detect user's timezone using browser API (no external calls needed)
         let timezoneInfo: { timezone: string; offset: string } | null = null;
         
         try {
-          logInfo('Detecting timezone from public IP...');
-          const response = await fetch('https://api.ipify.org?format=json', { method: 'GET' });
-          if (response.ok) {
-            const { ip } = await response.json();
-            const tzResponse = await fetch(`https://ip-api.com/json/${ip}?fields=timezone,status`);
-            if (tzResponse.ok) {
-              const tzData = await tzResponse.json();
-              if (tzData.status === 'success' && tzData.timezone) {
-                timezoneInfo = { timezone: tzData.timezone, offset: new Date().toLocaleString('en-US', { timeZoneName: 'short' }).split(' ').pop() || '' };
-                logInfo(`Timezone detected: ${timezoneInfo.timezone}`);
-              }
-            }
-          }
+          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const offset = new Date().toLocaleString('en-US', { timeZoneName: 'short' }).split(' ').pop() || '';
+          timezoneInfo = { timezone, offset };
+          logInfo(`Timezone detected from browser: ${timezone}`);
         } catch (err) {
           logWarning(`Timezone detection failed, will use backend timezone: ${err}`);
         }
