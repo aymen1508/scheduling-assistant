@@ -1,0 +1,26 @@
+# Core Framework
+fastapi==0.133.1
+uvicorn[standard]==0.32.1
+python-dotenv==1.0.1
+
+# Azure AI & Identity
+azure-ai-projects>=2.0.0b4
+azure-ai-voicelive>=1.2.0b4
+azure-identity>=1.26.0b2
+azure-core>=1.38.2
+
+# Azure Storage (optional, for file handling)
+azure-storage-blob>=12.29.0b1
+
+# Additional utilities
+aiohttp==3.13.3
+httpx==0.28.1
+pydantic>=2.7.0
+pytz>=2024.1
+
+# Development (optional)
+pytest==7.4.4
+pytest-asyncio==0.23.3
+black==24.1.1
+flake8==7.0.0
+mypy==1.8.0

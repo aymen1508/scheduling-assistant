@@ -1,0 +1,45 @@
+# Docker Compose for local development
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - PORT=8000
+      - CORS_ORIGINS=*
+      - LOG_LEVEL=INFO
+    env_file:
+      - .env
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/logs:/app/logs
+    command: uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+    networks:
+      - voice-assistant
+
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_WEBSOCKET_URL=ws://backend:8000/ws/voice
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    volumes:
+      - ./frontend-next:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - backend
+    networks:
+      - voice-assistant
+
+networks:
+  voice-assistant:
+    driver: bridge
