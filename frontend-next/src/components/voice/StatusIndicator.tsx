@@ -28,6 +28,7 @@ export function StatusIndicator({ isConnected, status, error }: StatusIndicatorP
         <span className="text-sm font-semibold text-gray-700">
           {isConnected ? '✅ Connected' : '❌ Disconnected'}
         </span>
+        <span className="text-xs text-gray-500 mt-0.5">{status}</span>
         {error && (
           <span className="text-xs text-red-600 mt-0.5">
             {error}
