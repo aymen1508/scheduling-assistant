@@ -33,7 +33,7 @@ class VoiceSession:
         self._event_processor_task: asyncio.Task | None = None
         self._greeting_sent = False
         self.timezone_info: Optional[Dict[str, Any]] = None
-        
+
         log_info("VoiceSession initialized")
 
     async def start(self) -> None:
@@ -47,7 +47,7 @@ class VoiceSession:
             # Connect to VoiceLive
             await self.service.connect_session()
             await self.service.setup_session()
-            
+
             # Don't inject system prompt yet - wait for timezone from client
 
             log_success("Voice session started")
@@ -127,7 +127,10 @@ class VoiceSession:
                 log_info("User stopped speaking - ready for response")
 
             # TRANSCRIPTION
-            elif event_type == ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED:
+            elif (
+                event_type
+                == ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED
+            ):
                 transcript = event.get("transcript", "")
                 if transcript:
                     log_chat(f"User: {transcript}")
@@ -152,26 +155,29 @@ class VoiceSession:
             elif event_type == ServerEventType.RESPONSE_AUDIO_DELTA:
                 if event.delta:
                     import base64
+
                     audio_base64 = base64.b64encode(event.delta).decode("utf-8")
-                    await self.message_handler.send_audio(
-                        self.websocket, audio_base64
-                    )
+                    await self.message_handler.send_audio(self.websocket, audio_base64)
 
             elif event_type == ServerEventType.RESPONSE_DONE:
                 # Don't hold response - MCP tools execute AFTER response completes
                 self.service._active_response = False
                 self.service._response_api_done = True
                 log_success("Response completed")
-                
+
                 # If MCP approval was just sent, create new response to trigger tool execution
                 if self.service._mcp_approval_pending:
                     self.service._mcp_approval_pending = False
                     if self.service.connection:
                         try:
                             await self.service.connection.response.create()
-                            log_info("New response created to trigger MCP tool execution")
+                            log_info(
+                                "New response created to trigger MCP tool execution"
+                            )
                         except Exception as e:
-                            log_error(f"Failed to create response for MCP execution: {e}")
+                            log_error(
+                                f"Failed to create response for MCP execution: {e}"
+                            )
                 else:
                     await self.message_handler.send_status(
                         self.websocket,
@@ -189,37 +195,45 @@ class VoiceSession:
             # MCP CALL EXECUTION EVENTS
             elif event_type == ServerEventType.RESPONSE_MCP_CALL_IN_PROGRESS:
                 self.service._mcp_tools_in_progress.add(event.item_id)
-                log_info(f"MCP call in progress: {event.item_id} ({len(self.service._mcp_tools_in_progress)} pending)")
+                log_info(
+                    f"MCP call in progress: {event.item_id} ({len(self.service._mcp_tools_in_progress)} pending)"
+                )
             elif event_type == ServerEventType.RESPONSE_MCP_CALL_COMPLETED:
                 self.service._mcp_tools_in_progress.discard(event.item_id)
-                log_success(f"MCP call completed: {event.item_id} ({len(self.service._mcp_tools_in_progress)} remaining)")
+                log_success(
+                    f"MCP call completed: {event.item_id} ({len(self.service._mcp_tools_in_progress)} remaining)"
+                )
                 # Note: Azure automatically processes MCP output within the same response
                 # No need to create a new response - the agent will speak the result automatically
-                    
+
             elif event_type == ServerEventType.RESPONSE_MCP_CALL_FAILED:
                 self.service._mcp_tools_in_progress.discard(event.item_id)
-                log_error(f"MCP call failed: {event.item_id} ({len(self.service._mcp_tools_in_progress)} remaining)")
+                log_error(
+                    f"MCP call failed: {event.item_id} ({len(self.service._mcp_tools_in_progress)} remaining)"
+                )
 
             # CONVERSATION ITEM EVENTS
             elif event_type == ServerEventType.CONVERSATION_ITEM_CREATED:
                 item_type = getattr(event.item, "type", None)
-                
+
                 if item_type == ItemType.MCP_LIST_TOOLS:
                     server_label = getattr(event.item, "server_label", "unknown")
                     log_info(f"MCP list tools: server={server_label}")
-                    
+
                 elif item_type == ItemType.MCP_CALL:
                     server_label = getattr(event.item, "server_label", "unknown")
                     function_name = getattr(event.item, "name", "unknown")
-                    log_info(f"MCP call: server={server_label}, function={function_name}")
+                    log_info(
+                        f"MCP call: server={server_label}, function={function_name}"
+                    )
                     # Send tool call notification to UI
                     await self.message_handler.send_tool(
                         self.websocket,
                         function_name,
                         server_label,
-                        f"Executing {function_name}..."
+                        f"Executing {function_name}...",
                     )
-                    
+
                 elif item_type == ItemType.MCP_APPROVAL_REQUEST:
                     await self.service.handle_mcp_approval(event)
 
@@ -236,9 +250,7 @@ class VoiceSession:
                         return
 
                     log_error(f"VoiceLive error: {message}")
-                    await self.message_handler.send_error(
-                        self.websocket, message
-                    )
+                    await self.message_handler.send_error(self.websocket, message)
 
         except Exception as e:
             log_error(f"Error handling event: {e}")
@@ -249,7 +261,7 @@ class VoiceSession:
             if not self.service.connection:
                 log_warning("Connection not ready for new conversation")
                 return
-            
+
             # Reset greeting flag and send greeting
             self._greeting_sent = False
             await self.service.send_greeting()
@@ -263,13 +275,17 @@ class VoiceSession:
         try:
             if timezone_name:
                 log_info(f"Setting timezone to: {timezone_name}")
-                self.timezone_info = await GeolocationService.get_timezone_info(timezone_name)
-                log_success(f"Timezone set: {self.timezone_info.get('timezone', 'UTC')}")
-                
+                self.timezone_info = await GeolocationService.get_timezone_info(
+                    timezone_name
+                )
+                log_success(
+                    f"Timezone set: {self.timezone_info.get('timezone', 'UTC')}"
+                )
+
                 # Update service with timezone info
                 if self.service:
                     self.service.timezone_info = self.timezone_info
-                    
+
                     # Inject system prompt with timezone (only once)
                     if self.service.connection:
                         try:

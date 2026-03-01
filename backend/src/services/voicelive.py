@@ -39,7 +39,7 @@ class VoiceLiveService:
 
     def __init__(self, timezone_info: Optional[Dict[str, Any]] = None):
         """Initialize VoiceLive service
-        
+
         Args:
             timezone_info: Dictionary with timezone info from geolocation service
         """
@@ -94,7 +94,7 @@ class VoiceLiveService:
                 api_version=AzureVoiceLiveConfig.API_VERSION,
                 agent_config=agent_config,
             )
-            
+
             # Enter the context and keep it open
             self.connection = await self.connection_context.__aenter__()
 
@@ -129,7 +129,9 @@ class VoiceLiveService:
             await self.connection.conversation.item.create(
                 item=MessageItem(
                     role="system",
-                    content=[InputTextContentPart(text=get_system_prompt(self.timezone_info))],
+                    content=[
+                        InputTextContentPart(text=get_system_prompt(self.timezone_info))
+                    ],
                 )
             )
             log_success("System prompt injected")
@@ -167,7 +169,7 @@ class VoiceLiveService:
             decoded_size = len(audio_base64) * 3 / 4  # Base64 to bytes
             samples = int(decoded_size / 2)  # int16 is 2 bytes
             self._audio_buffer_samples += samples
-            
+
             await self.connection.input_audio_buffer.append(audio=audio_base64)
         except Exception as e:
             log_error(f"Failed to push audio: {e}")
@@ -186,7 +188,9 @@ class VoiceLiveService:
         try:
             # Check if we have meaningful audio (at least 200ms @ 24kHz = 4800 samples)
             if self._audio_buffer_samples < 4800:
-                log_info(f"Insufficient audio: {self._audio_buffer_samples} samples (< 4800), skipping turn")
+                log_info(
+                    f"Insufficient audio: {self._audio_buffer_samples} samples (< 4800), skipping turn"
+                )
                 self._audio_buffer_samples = 0
                 return
 
@@ -200,11 +204,11 @@ class VoiceLiveService:
                 return
 
             self._audio_buffer_samples = 0
-            
+
             # Request new response (will set _active_response via RESPONSE_CREATED event)
             await self.connection.response.create()
             log_success("User turn finalized and response requested")
-            
+
         except Exception as e:
             self._audio_buffer_samples = 0
             log_error(f"Error in finalize_user_turn: {e}")
@@ -257,29 +261,35 @@ class VoiceLiveService:
 
             tool_name = getattr(approval_request, "name", "unknown")
             server_label = getattr(approval_request, "server_label", "unknown")
-            
-            log_info(f"Auto-approving MCP tool: {tool_name} from {server_label}")
+            arguments = getattr(approval_request, "arguments", None)
+
+            # Log tool call with arguments for debugging
+            if arguments:
+                log_info(
+                    f"Auto-approving MCP tool: {tool_name} from {server_label} with args: {arguments}"
+                )
+            else:
+                log_info(f"Auto-approving MCP tool: {tool_name} from {server_label}")
 
             try:
                 # Create and send approval response
                 approval_response = MCPApprovalResponseRequestItem(
-                    approval_request_id=request_id,
-                    approve=True
+                    approval_request_id=request_id, approve=True
                 )
                 await asyncio.wait_for(
                     self.connection.conversation.item.create(item=approval_response),
-                    timeout=5.0
+                    timeout=5.0,
                 )
                 log_success(f"MCP approval sent: {tool_name}")
-                
+
                 # Set flag so RESPONSE_DONE handler knows to create new response
                 self._mcp_approval_pending = True
-                
+
             except asyncio.TimeoutError:
                 log_error(f"MCP approval timeout for {tool_name}")
             except Exception as e:
                 log_error(f"Error approving MCP tool {tool_name}: {e}")
-                
+
         except Exception as e:
             log_error(f"Error handling MCP approval: {e}")
 
