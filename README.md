@@ -1,4 +1,4 @@
-# Vikara Voice Scheduling Assistant
+# Voice Scheduling Assistant
 
 A real-time voice-enabled scheduling assistant that listens to users, understands their scheduling needs in natural conversation, and automatically books meetings on their Google Calendar.
 
