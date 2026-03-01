@@ -9,7 +9,6 @@ import {
   base64ToAudioBuffer,
   generateMessageId,
   resampleAudio,
-  processVoiceChunk,
 } from '@/lib/audio';
 import {
   logWebSocket,
@@ -53,7 +52,7 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}) {
 
   const wsUrl = options.wsUrl || process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8000/ws/voice';
   const TARGET_SAMPLE_RATE = 24000;
-  const CAPTURE_FRAME_SAMPLES = 2400; // 100ms @ 24kHz
+  const CAPTURE_FRAME_SAMPLES = 2400; // 100ms @ 24kHz - natural chunk size for accurate transcription
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -282,7 +281,7 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}) {
         audio: {
           channelCount: 1,
           echoCancellation: true,
-          noiseSuppression: false,
+          noiseSuppression: true,
           autoGainControl: true,
           sampleSize: 16,
         },
@@ -315,7 +314,8 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}) {
             ? resampleAudio(audioData, audioContext.sampleRate, TARGET_SAMPLE_RATE)
             : audioData;
 
-          const processed = processVoiceChunk(resampled);
+          // Keep the capture path close to browser-native processing.
+          const processed = resampled;
 
           const pending = pendingCaptureBufferRef.current;
           const merged = new Float32Array(pending.length + processed.length);

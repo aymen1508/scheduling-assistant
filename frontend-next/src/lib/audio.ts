@@ -77,16 +77,16 @@ export function processVoiceChunk(input: Float32Array): Float32Array {
   }
   rms = Math.sqrt(rms / input.length);
 
-  const targetRms = 0.10;
-  const minRms = 0.0004;
-  const maxGain = 2.5;
+  const targetRms = 0.14;
+  const minRms = 0.0006;
+  const maxGain = 4.5;
   const gain = rms > minRms ? Math.min(targetRms / rms, maxGain) : 1.0;
 
   for (let i = 0; i < input.length; i++) {
     let sample = (input[i] - mean) * gain;
 
-    if (sample > 0.92) sample = 0.92;
-    if (sample < -0.92) sample = -0.92;
+    if (sample > 0.95) sample = 0.95;
+    if (sample < -0.95) sample = -0.95;
 
     output[i] = sample;
   }
