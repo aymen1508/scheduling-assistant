@@ -282,8 +282,9 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}) {
         audio: {
           channelCount: 1,
           echoCancellation: true,
-          noiseSuppression: true,
+          noiseSuppression: false,
           autoGainControl: true,
+          sampleSize: 16,
         },
       });
       mediaStreamRef.current = stream;

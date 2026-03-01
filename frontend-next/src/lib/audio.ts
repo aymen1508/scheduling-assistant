@@ -54,10 +54,10 @@ export function float32ToInt16(float32Array: Float32Array): Int16Array {
 }
 
 /**
- * Light voice preprocessing for better transcription robustness:
+ * Voice preprocessing for transcription robustness:
  * - Remove DC offset
- * - Apply gentle auto-gain toward target RMS
- * - Hard-limit to prevent clipping
+ * - Keep dynamics natural (avoid aggressive gain pumping)
+ * - Soft-limit to prevent clipping
  */
 export function processVoiceChunk(input: Float32Array): Float32Array {
   if (input.length === 0) return input;
@@ -77,16 +77,16 @@ export function processVoiceChunk(input: Float32Array): Float32Array {
   }
   rms = Math.sqrt(rms / input.length);
 
-  const targetRms = 0.18;  // Increased from 0.12 for louder output
-  const minRms = 0.0008;   // Lowered from 0.003 to catch quieter speech
-  const maxGain = 8.0;     // Increased from 4.0 for more amplification
+  const targetRms = 0.10;
+  const minRms = 0.0004;
+  const maxGain = 2.5;
   const gain = rms > minRms ? Math.min(targetRms / rms, maxGain) : 1.0;
 
   for (let i = 0; i < input.length; i++) {
     let sample = (input[i] - mean) * gain;
 
-    if (sample > 0.98) sample = 0.98;
-    if (sample < -0.98) sample = -0.98;
+    if (sample > 0.92) sample = 0.92;
+    if (sample < -0.92) sample = -0.92;
 
     output[i] = sample;
   }
