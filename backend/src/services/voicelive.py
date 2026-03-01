@@ -6,7 +6,7 @@ import asyncio
 import base64
 from typing import Any, Optional, AsyncGenerator, Dict
 
-from azure.identity.aio import AzureCliCredential
+from azure.identity.aio import DefaultAzureCredential
 from azure.ai.voicelive.aio import AgentSessionConfig, connect
 from azure.ai.voicelive.models import (
     InputAudioFormat,
@@ -45,7 +45,7 @@ class VoiceLiveService:
         """
         self.connection: Optional[Any] = None
         self.connection_context: Optional[Any] = None
-        self.credential: Optional[AzureCliCredential] = None
+        self.credential: Optional[DefaultAzureCredential] = None
         self.timezone_info = timezone_info
         self._active_response = False
         self._response_api_done = False
@@ -57,7 +57,7 @@ class VoiceLiveService:
     async def connect_session(self) -> None:
         """Establish connection to VoiceLive API"""
         try:
-            self.credential = AzureCliCredential()
+            self.credential = DefaultAzureCredential()
 
             agent_config: AgentSessionConfig = {  # type: ignore
                 "agent_name": AzureVoiceLiveConfig.AGENT_ID,

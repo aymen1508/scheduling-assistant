@@ -77,9 +77,9 @@ export function processVoiceChunk(input: Float32Array): Float32Array {
   }
   rms = Math.sqrt(rms / input.length);
 
-  const targetRms = 0.12;
-  const minRms = 0.003;
-  const maxGain = 4.0;
+  const targetRms = 0.18;  // Increased from 0.12 for louder output
+  const minRms = 0.0008;   // Lowered from 0.003 to catch quieter speech
+  const maxGain = 8.0;     // Increased from 4.0 for more amplification
   const gain = rms > minRms ? Math.min(targetRms / rms, maxGain) : 1.0;
 
   for (let i = 0; i < input.length; i++) {
