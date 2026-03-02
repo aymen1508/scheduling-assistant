@@ -6,10 +6,8 @@ A real-time voice-enabled scheduling assistant that listens to users, understand
 
 ## Deployed URL & How to Test
 
-**Live URL:** https://mango-bush-03d547203.2.azurestaticapps.net
-
 **To test:**
-1. Open the URL in your browser
+1. Open the Live URL in your browser
 2. Click "Start Recording" to begin speaking
 3. Speak naturally, for example:
    - "Book a meeting for tomorrow at 2 PM"
